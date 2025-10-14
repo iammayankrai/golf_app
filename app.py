@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
+import json
+import os
 
 # Page configuration
 st.set_page_config(
@@ -83,74 +85,164 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# Data persistence functions
+def load_users():
+    """Load users from JSON file"""
+    try:
+        if os.path.exists('users.json'):
+            with open('users.json', 'r') as f:
+                return json.load(f)
+    except:
+        pass
+    return {}
+
+def save_users(users):
+    """Save users to JSON file"""
+    try:
+        with open('users.json', 'w') as f:
+            json.dump(users, f, indent=2)
+    except:
+        st.error("Error saving user data")
+
+def load_matches():
+    """Load matches from JSON file"""
+    try:
+        if os.path.exists('matches.json'):
+            with open('matches.json', 'r') as f:
+                matches_data = json.load(f)
+                # Convert date strings back to datetime objects
+                for match in matches_data:
+                    if 'date' in match:
+                        match['date'] = datetime.fromisoformat(match['date'])
+                    if 'created_date' in match:
+                        match['created_date'] = datetime.fromisoformat(match['created_date'])
+                    if 'completed_date' in match:
+                        match['completed_date'] = datetime.fromisoformat(match['completed_date'])
+                return matches_data
+    except:
+        pass
+    return []
+
+def save_matches(matches):
+    """Save matches to JSON file"""
+    try:
+        matches_data = []
+        for match in matches:
+            match_copy = match.copy()
+            # Convert datetime objects to strings for JSON
+            if 'date' in match_copy:
+                match_copy['date'] = match_copy['date'].isoformat()
+            if 'created_date' in match_copy:
+                match_copy['created_date'] = match_copy['created_date'].isoformat()
+            if 'completed_date' in match_copy:
+                match_copy['completed_date'] = match_copy['completed_date'].isoformat()
+            matches_data.append(match_copy)
+        
+        with open('matches.json', 'w') as f:
+            json.dump(matches_data, f, indent=2)
+    except:
+        st.error("Error saving match data")
+
 # Initialize session state for user authentication and data
 def initialize_session_state():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
     if 'current_user' not in st.session_state:
         st.session_state.current_user = None
-    if 'matches' not in st.session_state:
-        # Sample match data
-        st.session_state.matches = [
-            {
-                'id': 1,
-                'date': datetime.now() + timedelta(days=2),
-                'teams': ['Team 1', 'Team 2'],
-                'status': 'Upcoming',
-                'location': 'Pebble Beach Golf Links',
-                'handicap': 16.6,
-                'course_par': 72
-            },
-            {
-                'id': 2,
-                'date': datetime.now() - timedelta(days=5),
-                'teams': ['Team 3', 'Team 4'],
-                'status': 'Completed',
-                'location': 'St. Andrews Links',
-                'handicap': 12.3,
-                'course_par': 72,
-                'scores': {'Team 3': 72, 'Team 4': 75},
-                'weather': 'Sunny',
-                'course_condition': 'Excellent'
-            },
-            {
-                'id': 3,
-                'date': datetime.now() + timedelta(days=7),
-                'teams': ['Team 1', 'Team 5'],
-                'status': 'Upcoming',
-                'location': 'Augusta National',
-                'handicap': 14.2,
-                'course_par': 72
-            }
-        ]
+    
+    # Load persistent data
     if 'users' not in st.session_state:
-        # Sample user data
-        st.session_state.users = {
-            'craig@portfreyly.co': {
-                'name': 'Craig Roberts',
-                'phone': '440-0034-5078',
-                'country': 'England',
-                'handicap': 16.5,
-                'team': 'Team 1',
-                'password': 'password'
-            },
-            'alex@example.com': {
-                'name': 'Alex Johnson',
-                'phone': '440-1234-5678',
-                'country': 'USA',
-                'handicap': 12.3,
-                'team': 'Team 2',
-                'password': 'password'
+        st.session_state.users = load_users()
+        
+        # If no users exist, create sample users
+        if not st.session_state.users:
+            st.session_state.users = {
+                'craig@portfreyly.co': {
+                    'name': 'Craig Roberts',
+                    'phone': '440-0034-5078',
+                    'country': 'England',
+                    'handicap': 16.5,
+                    'password': 'password'
+                },
+                'omkar@example.com': {
+                    'name': 'Omkar Pol',
+                    'phone': '440-1111-2222',
+                    'country': 'India',
+                    'handicap': 12.3,
+                    'password': 'password'
+                },
+                'mayank@example.com': {
+                    'name': 'Mayank Rai',
+                    'phone': '440-2222-3333',
+                    'country': 'India',
+                    'handicap': 14.7,
+                    'password': 'password'
+                },
+                'nitesh@example.com': {
+                    'name': 'Nitesh Devadiga',
+                    'phone': '440-3333-4444',
+                    'country': 'India',
+                    'handicap': 18.2,
+                    'password': 'password'
+                },
+                'dinesh@example.com': {
+                    'name': 'Dinesh Rambade',
+                    'phone': '440-4444-5555',
+                    'country': 'India',
+                    'handicap': 15.8,
+                    'password': 'password'
+                },
+                'mayank_s@example.com': {
+                    'name': 'Mayank Saxena',
+                    'phone': '440-5555-6666',
+                    'country': 'India',
+                    'handicap': 13.5,
+                    'password': 'password'
+                }
             }
-        }
+            save_users(st.session_state.users)
+    
+    if 'matches' not in st.session_state:
+        st.session_state.matches = load_matches()
+        
+        # If no matches exist, create sample matches
+        if not st.session_state.matches:
+            st.session_state.matches = [
+                {
+                    'id': 1,
+                    'date': datetime.now() + timedelta(days=2),
+                    'players': ['Craig Roberts', 'Omkar Pol'],
+                    'status': 'Upcoming',
+                    'location': 'Pebble Beach Golf Links',
+                    'handicap': 16.6,
+                    'course_par': 72,
+                    'format': 'Stroke Play'
+                },
+                {
+                    'id': 2,
+                    'date': datetime.now() - timedelta(days=5),
+                    'players': ['Mayank Rai', 'Nitesh Devadiga'],
+                    'status': 'Completed',
+                    'location': 'St. Andrews Links',
+                    'handicap': 12.3,
+                    'course_par': 72,
+                    'format': 'Stroke Play',
+                    'scores': [72, 75],
+                    'weather': 'Sunny',
+                    'course_condition': 'Excellent'
+                }
+            ]
+            save_matches(st.session_state.matches)
+    
     if 'leaderboard' not in st.session_state:
         # Sample leaderboard data
         st.session_state.leaderboard = [
-            {'name': 'Mayank Rai', 'handicap': 16.5, 'points': 120, 'matches_played': 8},
+            {'name': 'Craig Roberts', 'handicap': 16.5, 'points': 120, 'matches_played': 8},
             {'name': 'Omkar Pol', 'handicap': 12.3, 'points': 115, 'matches_played': 7},
-            {'name': 'Nitesh Devadiga', 'handicap': 18.2, 'points': 110, 'matches_played': 6},
-            {'name': 'Dinesh Rambade', 'handicap': 14.7, 'points': 105, 'matches_played': 5},
-            {'name': 'Mayank Saxena', 'handicap': 15.8, 'points': 95, 'matches_played': 5}
+            {'name': 'Mayank Rai', 'handicap': 14.7, 'points': 110, 'matches_played': 6},
+            {'name': 'Nitesh Devadiga', 'handicap': 18.2, 'points': 105, 'matches_played': 5},
+            {'name': 'Dinesh Rambade', 'handicap': 15.8, 'points': 95, 'matches_played': 5},
+            {'name': 'Mayank Saxena', 'handicap': 13.5, 'points': 90, 'matches_played': 4}
         ]
 
 # Authentication functions
@@ -168,7 +260,6 @@ def register_user(email, name, phone, country, handicap, password):
             'phone': phone,
             'country': country,
             'handicap': handicap,
-            'team': 'Unassigned',
             'password': password
         }
         # Add to leaderboard
@@ -178,6 +269,8 @@ def register_user(email, name, phone, country, handicap, password):
             'points': 0,
             'matches_played': 0
         })
+        # Save to persistent storage
+        save_users(st.session_state.users)
         return True
     return False
 
@@ -197,7 +290,7 @@ def show_auth_page():
             if login_submitted:
                 if authenticate_user(email, password):
                     st.success("Login successful!")
-                    st.experimental_rerun()
+                    st.rerun()
                 else:
                     st.error("Invalid email or password")
     
@@ -207,7 +300,7 @@ def show_auth_page():
             name = st.text_input("Full Name")
             email = st.text_input("Email")
             phone = st.text_input("Phone Number")
-            country = st.selectbox("Country", ["India", "United State", "Canada", "Australia", "Other"])
+            country = st.selectbox("Country", ["United States", "United Kingdom", "Canada", "Australia", "India", "Other"])
             handicap = st.slider("Handicap", 0.0, 36.0, 18.0)
             password = st.text_input("Password", type="password")
             confirm_password = st.text_input("Confirm Password", type="password")
@@ -230,14 +323,13 @@ def main_app():
     user_info = st.session_state.users[st.session_state.current_user]
     st.sidebar.markdown(f"**Welcome, {user_info['name']}**")
     st.sidebar.markdown(f"**Handicap:** {user_info['handicap']}")
-    st.sidebar.markdown(f"**Team:** {user_info['team']}")
     
     # Quick stats
     st.sidebar.markdown("---")
     st.sidebar.subheader("Quick Stats")
     
     user_matches = [m for m in st.session_state.matches 
-                   if user_info['team'] in m.get('teams', [])]
+                   if user_info['name'] in m.get('players', [])]
     upcoming_count = len([m for m in user_matches if m['status'] == 'Upcoming'])
     completed_count = len([m for m in user_matches if m['status'] == 'Completed'])
     
@@ -249,7 +341,7 @@ def main_app():
     if st.sidebar.button("🚪 Logout"):
         st.session_state.authenticated = False
         st.session_state.current_user = None
-        st.experimental_rerun()
+        st.rerun()
 
 # Main function
 def main():
