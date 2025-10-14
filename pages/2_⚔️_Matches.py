@@ -15,17 +15,30 @@ def show_matches_page():
         with col1:
             filter_status = st.selectbox("Filter by Status", ["All", "Upcoming", "Completed"])
         with col2:
-            all_teams = list(set([team for match in st.session_state.matches for team in match['teams']]))
-            filter_team = st.selectbox("Filter by Team", ["All Teams"] + all_teams)
+            # Get all players involved in matches
+            all_players = set()
+            for match in st.session_state.matches:
+                if 'players' in match:
+                    all_players.update(match['players'])
+            filter_player = st.selectbox("Filter by Player", ["All Players"] + list(all_players))
         with col3:
             st.write("")  # Spacer for layout
         
         # Apply filters
-        filtered_matches = st.session_state.matches.copy()
-        if filter_status != "All":
-            filtered_matches = [m for m in filtered_matches if m['status'] == filter_status]
-        if filter_team != "All Teams":
-            filtered_matches = [m for m in filtered_matches if filter_team in m['teams']]
+        filtered_matches = []
+        for match in st.session_state.matches:
+            # Skip matches that don't have proper structure
+            if 'players' not in match:
+                continue
+                
+            # Status filter
+            status_match = (filter_status == "All" or match['status'] == filter_status)
+            
+            # Player filter  
+            player_match = (filter_player == "All Players" or filter_player in match['players'])
+            
+            if status_match and player_match:
+                filtered_matches.append(match)
         
         # Display matches
         if not filtered_matches:
@@ -47,27 +60,31 @@ def show_matches_page():
                     col1, col2, col3 = st.columns(3)
                     
                     with col1:
-                        st.write("**Teams**")
-                        for team in match['teams']:
-                            team_style = "🟦" if team == user_info['team'] else "⬜"
-                            st.markdown(f'<div class="team-info">{team_style} {team}</div>', unsafe_allow_html=True)
+                        st.write("**Players**")
+                        for player in match['players']:
+                            player_style = "🟦" if player == user_info['name'] else "⬜"
+                            st.markdown(f'<div class="team-info">{player_style} {player}</div>', unsafe_allow_html=True)
                     
                     with col2:
                         st.write("**Match Info**")
                         st.write(f"📍 {match['location']}")
                         st.write(f"📊 Handicap: {match['handicap']}")
+                        st.write(f"⛳ Format: {match.get('format', 'Stroke Play')}")
                         if 'course_par' in match:
-                            st.write(f"⛳ Course Par: {match['course_par']}")
+                            st.write(f"🎯 Course Par: {match['course_par']}")
                         
                         if match['status'] == 'Completed' and 'scores' in match:
                             st.write("**Final Scores**")
-                            for team in match['teams']:
-                                st.write(f"{team}: {match['scores'][team]}")
+                            for i, player in enumerate(match['players']):
+                                score = match['scores'][i]
+                                par_diff = score - match.get('course_par', 72)
+                                par_text = f" ({par_diff:+d})" if par_diff != 0 else " (E)"
+                                st.write(f"{player}: {score}{par_text}")
                     
                     with col3:
                         st.write("**Actions**")
                         if match['status'] == 'Upcoming':
-                            if user_info['team'] in match['teams']:
+                            if user_info['name'] in match['players']:
                                 if st.button("Enter Scores", key=f"enter_{match['id']}"):
                                     st.session_state.selected_match = match
                                     st.switch_page("pages/3_📊_Score_Entry.py")
@@ -77,8 +94,11 @@ def show_matches_page():
                                 st.switch_page("pages/6_📍_GPS_Tracking.py")
                         else:
                             if 'scores' in match:
-                                winning_team = min(match['teams'], key=lambda x: match['scores'][x])
-                                st.success(f"🏆 Winner: {winning_team}")
+                                # Find winner
+                                min_score = min(match['scores'])
+                                winning_index = match['scores'].index(min_score)
+                                winning_player = match['players'][winning_index]
+                                st.success(f"🏆 Winner: {winning_player}")
                             
                             if st.button("View Summary", key=f"summary_{match['id']}"):
                                 show_match_summary(match)
@@ -171,7 +191,7 @@ def show_matches_page():
                 if submitted:
                     # Create new match
                     new_match = create_new_match(
-                        user_info['name'],  # Use user's name instead of team
+                        user_info['name'],
                         opponent,
                         match_date,
                         match_time,
@@ -184,6 +204,10 @@ def show_matches_page():
                     # Add to session state
                     st.session_state.matches.append(new_match)
                     
+                    # Save matches to persistent storage
+                    from app import save_matches
+                    save_matches(st.session_state.matches)
+                    
                     st.success("🎉 Match scheduled successfully!")
                     st.balloons()
                     st.rerun()
@@ -194,16 +218,19 @@ def show_matches_page():
         st.markdown("---")
         st.markdown("### 📊 Match Statistics")
         
-        user_matches = [m for m in st.session_state.matches if user_info['team'] in m.get('teams', [])]
+        user_matches = [m for m in st.session_state.matches if user_info['name'] in m.get('players', [])]
         upcoming_count = len([m for m in user_matches if m['status'] == 'Upcoming'])
         completed_count = len([m for m in user_matches if m['status'] == 'Completed'])
         
         wins = 0
         for match in user_matches:
             if match['status'] == 'Completed' and 'scores' in match:
-                user_score = match['scores'][user_info['team']]
-                other_team = [t for t in match['teams'] if t != user_info['team']][0]
-                if user_score < match['scores'][other_team]:
+                user_index = match['players'].index(user_info['name'])
+                user_score = match['scores'][user_index]
+                # Find opponent's score
+                opponent_index = 1 - user_index  # Since there are only 2 players
+                opponent_score = match['scores'][opponent_index]
+                if user_score < opponent_score:
                     wins += 1
         
         win_rate = (wins / completed_count * 100) if completed_count > 0 else 0
@@ -228,12 +255,12 @@ def create_new_match(player1, player2, match_date, match_time, course, handicap,
     return {
         'id': new_id,
         'date': match_datetime,
-        'players': [player1, player2],  # Using players instead of teams
+        'players': [player1, player2],
         'status': 'Upcoming',
         'location': course,
         'handicap': handicap,
         'format': match_format,
-        'course_par': 72,  # Default course par
+        'course_par': 72,
         'created_by': st.session_state.current_user,
         'created_date': datetime.now(),
         'notes': notes
@@ -249,6 +276,7 @@ def show_match_summary(match):
         st.write("**Match Details**")
         st.write(f"Date: {match['date'].strftime('%B %d, %Y')}")
         st.write(f"Location: {match['location']}")
+        st.write(f"Format: {match.get('format', 'Stroke Play')}")
         st.write(f"Course Par: {match.get('course_par', 'N/A')}")
         st.write(f"Handicap: {match['handicap']}")
         
@@ -256,32 +284,31 @@ def show_match_summary(match):
             st.write(f"Weather: {match['weather']}")
         if 'course_condition' in match:
             st.write(f"Course Condition: {match['course_condition']}")
+        if 'duration' in match:
+            st.write(f"Duration: {match['duration']}")
     
     with col2:
         st.write("**Final Results**")
         if 'scores' in match:
-            # Handle both old teams structure and new players structure
-            if 'teams' in match:
-                for team in match['teams']:
-                    score = match['scores'][team]
-                    par_diff = score - match.get('course_par', 72)
-                    par_text = f" ({par_diff:+d})" if par_diff != 0 else " (E)"
-                    st.write(f"{team}: {score}{par_text}")
-                
-                winning_team = min(match['teams'], key=lambda x: match['scores'][x])
-                st.success(f"**Winner: {winning_team}**")
-            elif 'players' in match:
-                for i, player in enumerate(match['players']):
-                    score = match['scores'][i]
-                    par_diff = score - match.get('course_par', 72)
-                    par_text = f" ({par_diff:+d})" if par_diff != 0 else " (E)"
-                    st.write(f"{player}: {score}{par_text}")
-                
-                # Find winner
-                min_score = min(match['scores'])
-                winning_index = match['scores'].index(min_score)
-                winning_player = match['players'][winning_index]
-                st.success(f"**Winner: {winning_player}**")
+            for i, player in enumerate(match['players']):
+                score = match['scores'][i]
+                par_diff = score - match.get('course_par', 72)
+                par_text = f" ({par_diff:+d})" if par_diff != 0 else " (E)"
+                st.write(f"{player}: {score}{par_text}")
+            
+            # Find winner
+            min_score = min(match['scores'])
+            winning_index = match['scores'].index(min_score)
+            winning_player = match['players'][winning_index]
+            st.success(f"**Winner: {winning_player}**")
+            
+            # Show player stats if available
+            if 'player_stats' in match:
+                st.write("**Player Stats**")
+                for player in match['players']:
+                    if player in match['player_stats']:
+                        stats = match['player_stats'][player]
+                        st.write(f"{player}: {stats.get('fairways_hit', 'N/A')}% Fairways, {stats.get('greens_in_regulation', 'N/A')}% GIR, {stats.get('total_putts', 'N/A')} Putts")
 
 # Check authentication
 if 'authenticated' not in st.session_state or not st.session_state.authenticated:
