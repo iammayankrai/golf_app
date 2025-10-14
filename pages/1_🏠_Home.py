@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
 def show_home_page():
@@ -54,27 +52,65 @@ def show_home_page():
         st.markdown("### 📈 Performance Analytics")
         
         # Tabbed charts
-        tab1, tab2, tab3, tab4 = st.tabs(["Score Trend", "Handicap History", "Course Performance", "Shot Analysis"])
+        tab1, tab2, tab3, tab4 = st.tabs(["Score Trend", "Handicap History", "Course Performance", "Performance Indicators"])
         
         with tab1:
-            # Score trend chart
-            fig_score_trend = create_score_trend_chart(analytics_data)
-            st.plotly_chart(fig_score_trend, use_container_width=True)
+            # Score trend chart using Streamlit
+            st.markdown("#### Score Trend (Last 6 Rounds)")
+            if analytics_data['recent_scores']:
+                score_data = pd.DataFrame({
+                    'Date': analytics_data['recent_dates'],
+                    'Score': analytics_data['recent_scores']
+                })
+                score_data = score_data.set_index('Date')
+                st.line_chart(score_data)
+            else:
+                st.info("No score data available yet. Play some matches to see your trends!")
         
         with tab2:
-            # Handicap history chart
-            fig_handicap = create_handicap_chart(analytics_data)
-            st.plotly_chart(fig_handicap, use_container_width=True)
+            # Handicap history chart using Streamlit
+            st.markdown("#### Handicap Progression (Last 6 Months)")
+            handicap_data = pd.DataFrame(analytics_data['handicap_history'])
+            handicap_data = handicap_data.set_index('month')
+            st.area_chart(handicap_data)
         
         with tab3:
-            # Course performance chart
-            fig_course = create_course_performance_chart(analytics_data)
-            st.plotly_chart(fig_course, use_container_width=True)
+            # Course performance chart using Streamlit
+            st.markdown("#### Performance by Course")
+            course_data = pd.DataFrame(analytics_data['course_performance'])
+            course_data = course_data.set_index('course')
+            st.bar_chart(course_data['avg_score'])
         
         with tab4:
-            # Shot analysis chart
-            fig_shots = create_shot_analysis_chart(analytics_data)
-            st.plotly_chart(fig_shots, use_container_width=True)
+            # Performance indicators using Streamlit components
+            st.markdown("#### Performance Indicators")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.markdown("**Greens in Regulation**")
+                st.metric("GIR", f"{analytics_data['gir_percentage']}%")
+            
+            with col2:
+                st.markdown("**Driving Accuracy**")
+                st.metric("Fairways", f"{analytics_data['fairway_percentage']}%")
+            
+            with col3:
+                st.markdown("**Scrambling**")
+                st.metric("Saves", f"{analytics_data['scrambling_percentage']}%")
+            
+            with col4:
+                st.markdown("**Putts per Round**")
+                st.metric("Putts", f"{analytics_data['avg_putts']}")
+            
+            # Club accuracy as a horizontal bar chart
+            st.markdown("#### Club Accuracy")
+            club_data = pd.DataFrame({
+                'Club': analytics_data['clubs'],
+                'Accuracy': analytics_data['shot_accuracy']
+            })
+            club_data = club_data.set_index('Club')
+            st.bar_chart(club_data)
         
         # Recent matches with enhanced visualization
         st.markdown("### 🎯 Recent Matches & Performance")
@@ -112,7 +148,7 @@ def show_home_page():
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Performance indicators
-        st.markdown("### 🎯 Performance Indicators")
+        st.markdown("### 🎯 Skill Progress")
         st.markdown('<div class="profile-container">', unsafe_allow_html=True)
         
         # Greens in Regulation
@@ -130,6 +166,11 @@ def show_home_page():
         scrambling = analytics_data['scrambling_percentage']
         st.progress(scrambling/100, text=f"{scrambling}%")
         
+        # Putting
+        st.write("**Putting Efficiency:**")
+        putting_eff = max(0, min(100, 100 - (analytics_data['avg_putts'] - 28) * 5))  # Scale to 28-36 putts
+        st.progress(putting_eff/100, text=f"{putting_eff}%")
+        
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Upcoming matches widget
@@ -141,7 +182,7 @@ def generate_analytics_data(user_info):
     
     # Get user's matches
     user_matches = [m for m in st.session_state.matches 
-                   if user_info['team'] in m.get('teams', []) and m['status'] == 'Completed']
+                   if user_info['name'] in m.get('players', []) and m['status'] == 'Completed']
     
     # Calculate basic stats
     total_matches = len(user_matches)
@@ -151,13 +192,16 @@ def generate_analytics_data(user_info):
     
     for match in user_matches:
         if 'scores' in match:
-            user_score = match['scores'][user_info['team']]
+            # Find user's score
+            user_index = match['players'].index(user_info['name'])
+            user_score = match['scores'][user_index]
             scores.append(user_score)
             dates.append(match['date'])
             
             # Determine win/loss
-            other_team = [t for t in match['teams'] if t != user_info['team']][0]
-            if user_score < match['scores'][other_team]:
+            opponent_index = 1 - user_index  # Since there are only 2 players
+            opponent_score = match['scores'][opponent_index]
+            if user_score < opponent_score:
                 wins += 1
     
     win_rate = (wins / total_matches * 100) if total_matches > 0 else 0
@@ -184,8 +228,8 @@ def generate_analytics_data(user_info):
         course_scores = [72 + np.random.normal(0, 3) for _ in range(4)]
         course_performance.append({
             'course': course,
-            'avg_score': np.mean(course_scores),
-            'best_score': min(course_scores),
+            'avg_score': round(np.mean(course_scores), 1),
+            'best_score': int(min(course_scores)),
             'rounds_played': 4
         })
     
@@ -220,129 +264,10 @@ def generate_analytics_data(user_info):
         'recent_dates': [d.strftime('%m/%d') for d in dates[-6:]] if len(dates) >= 6 else [d.strftime('%m/%d') for d in dates]
     }
 
-def create_score_trend_chart(analytics_data):
-    """Create a line chart showing score trends"""
-    if not analytics_data['recent_scores']:
-        # Create sample data if no real data
-        dates = ['01/01', '01/15', '02/01', '02/15', '03/01', '03/15']
-        scores = [72 + np.random.normal(0, 2) for _ in range(6)]
-    else:
-        dates = analytics_data['recent_dates']
-        scores = analytics_data['recent_scores']
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Scatter(
-        x=dates,
-        y=scores,
-        mode='lines+markers',
-        name='Scores',
-        line=dict(color='#1f77b4', width=3),
-        marker=dict(size=8, color='#1f77b4')
-    ))
-    
-    # Add par line
-    fig.add_hline(y=72, line_dash="dash", line_color="red", annotation_text="Par")
-    
-    fig.update_layout(
-        title="Score Trend (Last 6 Rounds)",
-        xaxis_title="Date",
-        yaxis_title="Score",
-        template="plotly_white",
-        height=300
-    )
-    
-    return fig
-
-def create_handicap_chart(analytics_data):
-    """Create a line chart showing handicap progression"""
-    handicap_data = analytics_data['handicap_history']
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Scatter(
-        x=[h['month'] for h in handicap_data],
-        y=[h['handicap'] for h in handicap_data],
-        mode='lines+markers',
-        name='Handicap',
-        line=dict(color='#2ca02c', width=3),
-        marker=dict(size=8, color='#2ca02c'),
-        fill='tozeroy',
-        fillcolor='rgba(44, 160, 44, 0.1)'
-    ))
-    
-    fig.update_layout(
-        title="Handicap Progression (Last 6 Months)",
-        xaxis_title="Month",
-        yaxis_title="Handicap",
-        template="plotly_white",
-        height=300
-    )
-    
-    return fig
-
-def create_course_performance_chart(analytics_data):
-    """Create a bar chart showing performance by course"""
-    course_data = analytics_data['course_performance']
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        x=[c['course'] for c in course_data],
-        y=[c['avg_score'] for c in course_data],
-        name='Average Score',
-        marker_color='#ff7f0e',
-        text=[f"{c['avg_score']:.1f}" for c in course_data],
-        textposition='auto',
-    ))
-    
-    fig.add_hline(y=72, line_dash="dash", line_color="red", annotation_text="Par")
-    
-    fig.update_layout(
-        title="Performance by Course",
-        xaxis_title="Course",
-        yaxis_title="Average Score",
-        template="plotly_white",
-        height=300
-    )
-    
-    return fig
-
-def create_shot_analysis_chart(analytics_data):
-    """Create a radar chart for shot analysis"""
-    clubs = analytics_data['clubs']
-    accuracy = analytics_data['shot_accuracy']
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Scatterpolar(
-        r=accuracy + [accuracy[0]],  # Close the circle
-        theta=clubs + [clubs[0]],    # Close the circle
-        fill='toself',
-        name='Accuracy %',
-        line=dict(color='#9467bd'),
-        fillcolor='rgba(148, 103, 189, 0.3)'
-    ))
-    
-    fig.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, 100]
-            )
-        ),
-        title="Club Accuracy Analysis",
-        template="plotly_white",
-        height=300,
-        showlegend=False
-    )
-    
-    return fig
-
 def show_enhanced_recent_matches(user_info, analytics_data):
     """Show recent matches with enhanced visualization"""
     user_matches = [m for m in st.session_state.matches 
-                   if user_info['team'] in m.get('teams', []) and m['status'] == 'Completed']
+                   if user_info['name'] in m.get('players', []) and m['status'] == 'Completed']
     
     recent_matches = user_matches[-3:]  # Last 3 matches
     
@@ -357,28 +282,30 @@ def show_enhanced_recent_matches(user_info, analytics_data):
             # Match header
             col1, col2 = st.columns([3, 1])
             with col1:
-                st.write(f"**{match['teams'][0]} vs {match['teams'][1]}**")
+                st.write(f"**{match['players'][0]} vs {match['players'][1]}**")
             with col2:
                 st.write(f"📅 {match['date'].strftime('%m/%d/%Y')}")
             
             # Scores and performance
             if 'scores' in match:
-                user_score = match['scores'][user_info['team']]
-                other_team = [t for t in match['teams'] if t != user_info['team']][0]
-                other_score = match['scores'][other_team]
+                user_index = match['players'].index(user_info['name'])
+                user_score = match['scores'][user_index]
+                opponent_index = 1 - user_index
+                opponent_score = match['scores'][opponent_index]
                 
                 col1, col2, col3 = st.columns(3)
                 
                 with col1:
-                    st.metric(f"{user_info['team']}", user_score, 
+                    st.metric(f"{user_info['name']}", user_score, 
                              delta=f"{user_score - match.get('course_par', 72):+d} vs Par")
                 
                 with col2:
-                    st.metric(f"{other_team}", other_score,
-                             delta=f"{other_score - match.get('course_par', 72):+d} vs Par")
+                    opponent_name = match['players'][opponent_index]
+                    st.metric(f"{opponent_name}", opponent_score,
+                             delta=f"{opponent_score - match.get('course_par', 72):+d} vs Par")
                 
                 with col3:
-                    result = "🏆 Win" if user_score < other_score else "🤝 Tie" if user_score == other_score else "❌ Loss"
+                    result = "🏆 Win" if user_score < opponent_score else "🤝 Tie" if user_score == opponent_score else "❌ Loss"
                     st.metric("Result", result)
             
             # Performance indicators for the match
@@ -404,7 +331,7 @@ def show_enhanced_recent_matches(user_info, analytics_data):
 def show_upcoming_matches_widget(user_info):
     """Show upcoming matches in a compact widget"""
     upcoming_matches = [m for m in st.session_state.matches 
-                       if m['status'] == 'Upcoming' and user_info['team'] in m['teams']]
+                       if m['status'] == 'Upcoming' and user_info['name'] in m['players']]
     
     if not upcoming_matches:
         st.info("No upcoming matches")
@@ -415,7 +342,7 @@ def show_upcoming_matches_widget(user_info):
             st.markdown('<div style="background: #f0f8ff; padding: 10px; border-radius: 8px; margin: 5px 0;">', unsafe_allow_html=True)
             
             days_until = (match['date'] - datetime.now()).days
-            st.write(f"**{match['teams'][0]} vs {match['teams'][1]}**")
+            st.write(f"**{match['players'][0]} vs {match['players'][1]}**")
             st.write(f"📍 {match['location']}")
             st.write(f"⏰ {match['date'].strftime('%b %d')} ({days_until} days)")
             
