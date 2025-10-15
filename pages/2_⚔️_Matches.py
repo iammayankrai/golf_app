@@ -164,10 +164,9 @@ def show_matches_page():
                 # Handicap adjustment
                 handicap = st.slider(
                     "Match Handicap",
-                    min_value=0.0,
-                    max_value=36.0,
+                    min_value=0,
+                    max_value=36,
                     value=user_info['handicap'],
-                    step=0.1,
                     help="Set the handicap for this match"
                 )
                 
@@ -315,3 +314,4 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
     st.warning("Please log in to view matches.")
 else:
     show_matches_page()
+
