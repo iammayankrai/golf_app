@@ -215,7 +215,7 @@ def generate_analytics_data(user_info):
     for i, month in enumerate(months):
         # Simulate handicap progression
         variation = np.random.uniform(-2, 2)
-        handicap = max(0, min(36, base_handicap + (6-i-1)*0.5 + variation))
+        handicap = max(0, min(36, base_handicap + (6-i-1)*1 + variation))
         handicap_history.append({
             'month': month.strftime('%b %Y'),
             'handicap': round(handicap, 1)
@@ -356,3 +356,4 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
     st.warning("Please log in to access the dashboard.")
 else:
     show_home_page()
+
