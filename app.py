@@ -161,42 +161,42 @@ def initialize_session_state():
                     'name': 'Craig Roberts',
                     'phone': '440-0034-5078',
                     'country': 'England',
-                    'handicap': 16.5,
+                    'handicap': 16,
                     'password': 'password'
                 },
                 'omkar@example.com': {
                     'name': 'Omkar Pol',
                     'phone': '440-1111-2222',
                     'country': 'India',
-                    'handicap': 12.3,
+                    'handicap': 12,
                     'password': 'password'
                 },
                 'mayank@example.com': {
                     'name': 'Mayank Rai',
                     'phone': '440-2222-3333',
                     'country': 'India',
-                    'handicap': 14.7,
+                    'handicap': 14,
                     'password': 'password'
                 },
                 'nitesh@example.com': {
                     'name': 'Nitesh Devadiga',
                     'phone': '440-3333-4444',
                     'country': 'India',
-                    'handicap': 18.2,
+                    'handicap': 18,
                     'password': 'password'
                 },
                 'dinesh@example.com': {
                     'name': 'Dinesh Rambade',
                     'phone': '440-4444-5555',
                     'country': 'India',
-                    'handicap': 15.8,
+                    'handicap': 15,
                     'password': 'password'
                 },
                 'mayank_s@example.com': {
                     'name': 'Mayank Saxena',
                     'phone': '440-5555-6666',
                     'country': 'India',
-                    'handicap': 13.5,
+                    'handicap': 13,
                     'password': 'password'
                 }
             }
@@ -214,7 +214,7 @@ def initialize_session_state():
                     'players': ['Craig Roberts', 'Omkar Pol'],
                     'status': 'Upcoming',
                     'location': 'Pebble Beach Golf Links',
-                    'handicap': 16.6,
+                    'handicap': 16,
                     'course_par': 72,
                     'format': 'Stroke Play'
                 },
@@ -224,7 +224,7 @@ def initialize_session_state():
                     'players': ['Mayank Rai', 'Nitesh Devadiga'],
                     'status': 'Completed',
                     'location': 'St. Andrews Links',
-                    'handicap': 12.3,
+                    'handicap': 12,
                     'course_par': 72,
                     'format': 'Stroke Play',
                     'scores': [72, 75],
@@ -237,12 +237,12 @@ def initialize_session_state():
     if 'leaderboard' not in st.session_state:
         # Sample leaderboard data
         st.session_state.leaderboard = [
-            {'name': 'Craig Roberts', 'handicap': 16.5, 'points': 120, 'matches_played': 8},
-            {'name': 'Omkar Pol', 'handicap': 12.3, 'points': 115, 'matches_played': 7},
-            {'name': 'Mayank Rai', 'handicap': 14.7, 'points': 110, 'matches_played': 6},
-            {'name': 'Nitesh Devadiga', 'handicap': 18.2, 'points': 105, 'matches_played': 5},
-            {'name': 'Dinesh Rambade', 'handicap': 15.8, 'points': 95, 'matches_played': 5},
-            {'name': 'Mayank Saxena', 'handicap': 13.5, 'points': 90, 'matches_played': 4}
+            {'name': 'Craig Roberts', 'handicap': 16, 'points': 120, 'matches_played': 8},
+            {'name': 'Omkar Pol', 'handicap': 12, 'points': 115, 'matches_played': 7},
+            {'name': 'Mayank Rai', 'handicap': 14, 'points': 110, 'matches_played': 6},
+            {'name': 'Nitesh Devadiga', 'handicap': 18, 'points': 105, 'matches_played': 5},
+            {'name': 'Dinesh Rambade', 'handicap': 15, 'points': 95, 'matches_played': 5},
+            {'name': 'Mayank Saxena', 'handicap': 13, 'points': 90, 'matches_played': 4}
         ]
 
 # Authentication functions
@@ -301,7 +301,7 @@ def show_auth_page():
             email = st.text_input("Email")
             phone = st.text_input("Phone Number")
             country = st.selectbox("Country", ["United States", "United Kingdom", "Canada", "Australia", "India", "Other"])
-            handicap = st.slider("Handicap", 0.0, 36.0, 18.0)
+            handicap = st.slider("Handicap", 0, 36, 18)
             password = st.text_input("Password", type="password")
             confirm_password = st.text_input("Confirm Password", type="password")
             register_submitted = st.form_submit_button("Sign Up")
@@ -355,3 +355,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
