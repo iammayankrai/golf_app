@@ -31,10 +31,9 @@ def show_profile_page():
             
             handicap = st.slider(
                 "Handicap", 
-                0.0, 
-                36.0, 
-                float(user_info['handicap']), 
-                0.1,
+                0, 
+                36, 
+                user_info['handicap'],
                 help="Your current golf handicap"
             )
             
@@ -241,3 +240,4 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
     st.warning("Please log in to view your profile.")
 else:
     show_profile_page()
+
