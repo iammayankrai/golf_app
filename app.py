@@ -213,7 +213,7 @@ def initialize_session_state():
                     'date': datetime.now() + timedelta(days=2),
                     'players': ['Craig Roberts', 'Omkar Pol'],
                     'status': 'Upcoming',
-                    'location': 'Pebble Beach Golf Links',
+                    'location': 'Bombay Presidency Golf Club',
                     'handicap': 16,
                     'course_par': 72,
                     'format': 'Stroke Play'
@@ -223,7 +223,7 @@ def initialize_session_state():
                     'date': datetime.now() - timedelta(days=5),
                     'players': ['Mayank Rai', 'Nitesh Devadiga'],
                     'status': 'Completed',
-                    'location': 'St. Andrews Links',
+                    'location': 'Juhu Vile Parle Gymkhana Club',
                     'handicap': 12,
                     'course_par': 72,
                     'format': 'Stroke Play',
@@ -355,4 +355,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
