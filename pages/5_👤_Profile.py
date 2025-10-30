@@ -3,7 +3,18 @@ import pandas as pd
 from datetime import datetime
 
 def show_profile_page():
-    st.markdown('<div class="main-header">Your Profile</div>', unsafe_allow_html=True)
+    # st.markdown('<div class="main-header">Your Profile</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <h1 style='
+        font-size: 36px;
+        font-weight: bold;
+        color: #2E8B57;
+        text-align: center;
+        margin-bottom: 10px;
+    '>
+        Your Profile
+    </h1>
+    """, unsafe_allow_html=True)
     
     user_info = st.session_state.users[st.session_state.current_user]
     
@@ -240,4 +251,5 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
     st.warning("Please log in to view your profile.")
 else:
     show_profile_page()
+
 
