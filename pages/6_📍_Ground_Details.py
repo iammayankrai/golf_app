@@ -3,16 +3,16 @@ import pandas as pd
 import numpy as np
 
 def show_gps_page():
-    st.markdown('<div class="main-header">Course GPS & Tracking</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">Ground Details</div>', unsafe_allow_html=True)
     
     # Course selection
     courses = [
-        "Pebble Beach Golf Links",
-        "St. Andrews Links", 
-        "Augusta National Golf Club",
-        "TPC Sawgrass",
-        "Bethpage Black Course",
-        "Royal Melbourne Golf Club"
+        "Bombay Presidency Golf Club (BPGC)",
+        "Willingdon Sports Club", 
+        "Kharghar Valley Golf Course",
+        "Royal Palms Golf & Country Club",
+        "9 Aces Golf Greens & Academy",
+        "Golden Swan Country Club"
     ]
     
     selected_course = st.selectbox("Select Course", courses)
@@ -157,6 +157,7 @@ def calculate_distance(from_hole, to_hole, holes_data):
 
 # Check authentication
 if 'authenticated' not in st.session_state or not st.session_state.authenticated:
-    st.warning("Please log in to access GPS tracking.")
+    st.warning("Please log in to access Ground Details.")
 else:
+
     show_gps_page()
