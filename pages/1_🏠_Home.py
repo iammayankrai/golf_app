@@ -222,7 +222,7 @@ def generate_analytics_data(user_info):
         })
     
     # Course performance data
-    courses = ['Pebble Beach', 'St. Andrews', 'Augusta National', 'TPC Sawgrass']
+    courses = ['Bombay Presidency Golf Club (BPGC)', 'Willingdon Sports Club', 'Kharghar Valley Golf Course', 'Royal Palms Golf & Country Club']
     course_performance = []
     for course in courses:
         course_scores = [72 + np.random.normal(0, 3) for _ in range(4)]
@@ -356,4 +356,5 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
     st.warning("Please log in to access the dashboard.")
 else:
     show_home_page()
+
 
