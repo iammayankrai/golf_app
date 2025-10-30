@@ -85,9 +85,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+
+# ---------------------------
 # Data persistence functions
+# ---------------------------
 def load_users():
-    """Load users from JSON file"""
     try:
         if os.path.exists('users.json'):
             with open('users.json', 'r') as f:
@@ -97,7 +99,6 @@ def load_users():
     return {}
 
 def save_users(users):
-    """Save users to JSON file"""
     try:
         with open('users.json', 'w') as f:
             json.dump(users, f, indent=2)
@@ -105,12 +106,10 @@ def save_users(users):
         st.error("Error saving user data")
 
 def load_matches():
-    """Load matches from JSON file"""
     try:
         if os.path.exists('matches.json'):
             with open('matches.json', 'r') as f:
                 matches_data = json.load(f)
-                # Convert date strings back to datetime objects
                 for match in matches_data:
                     if 'date' in match:
                         match['date'] = datetime.fromisoformat(match['date'])
@@ -124,12 +123,10 @@ def load_matches():
     return []
 
 def save_matches(matches):
-    """Save matches to JSON file"""
     try:
         matches_data = []
         for match in matches:
             match_copy = match.copy()
-            # Convert datetime objects to strings for JSON
             if 'date' in match_copy:
                 match_copy['date'] = match_copy['date'].isoformat()
             if 'created_date' in match_copy:
@@ -143,18 +140,22 @@ def save_matches(matches):
     except:
         st.error("Error saving match data")
 
-# Initialize session state for user authentication and data
+
+# ---------------------------
+# Initialize session state
+# ---------------------------
 def initialize_session_state():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
     if 'current_user' not in st.session_state:
         st.session_state.current_user = None
-    
+    if 'redirected_after_login' not in st.session_state:
+        st.session_state.redirected_after_login = False
+
     # Load persistent data
     if 'users' not in st.session_state:
         st.session_state.users = load_users()
-        
-        # If no users exist, create sample users
+
         if not st.session_state.users:
             st.session_state.users = {
                 'craig@portfreyly.co': {
@@ -201,11 +202,10 @@ def initialize_session_state():
                 }
             }
             save_users(st.session_state.users)
-    
+
     if 'matches' not in st.session_state:
         st.session_state.matches = load_matches()
-        
-        # If no matches exist, create sample matches
+
         if not st.session_state.matches:
             st.session_state.matches = [
                 {
@@ -233,9 +233,8 @@ def initialize_session_state():
                 }
             ]
             save_matches(st.session_state.matches)
-    
+
     if 'leaderboard' not in st.session_state:
-        # Sample leaderboard data
         st.session_state.leaderboard = [
             {'name': 'Craig Roberts', 'handicap': 16, 'points': 120, 'matches_played': 8},
             {'name': 'Omkar Pol', 'handicap': 12, 'points': 115, 'matches_played': 7},
@@ -245,7 +244,10 @@ def initialize_session_state():
             {'name': 'Mayank Saxena', 'handicap': 13, 'points': 90, 'matches_played': 4}
         ]
 
-# Authentication functions
+
+# ---------------------------
+# Authentication
+# ---------------------------
 def authenticate_user(email, password):
     if email in st.session_state.users and st.session_state.users[email]['password'] == password:
         st.session_state.authenticated = True
@@ -262,50 +264,53 @@ def register_user(email, name, phone, country, handicap, password):
             'handicap': handicap,
             'password': password
         }
-        # Add to leaderboard
         st.session_state.leaderboard.append({
             'name': name,
             'handicap': handicap,
             'points': 0,
             'matches_played': 0
         })
-        # Save to persistent storage
         save_users(st.session_state.users)
         return True
     return False
 
-# Login/Registration page
+
+# ---------------------------
+# Login/Signup Page
+# ---------------------------
 def show_auth_page():
     st.markdown('<div class="main-header">⛳ Golf Match Manager</div>', unsafe_allow_html=True)
-    
+
     col1, col2 = st.columns([1, 1])
-    
+
     with col1:
         st.subheader("Sign In")
         with st.form("login_form"):
             email = st.text_input("Email", key="login_email")
             password = st.text_input("Password", type="password", key="login_password")
             login_submitted = st.form_submit_button("Sign In")
-            
+
             if login_submitted:
                 if authenticate_user(email, password):
                     st.success("Login successful!")
+                    # Redirect to home automatically after login
+                    st.session_state.redirected_after_login = True
                     st.rerun()
                 else:
                     st.error("Invalid email or password")
-    
+
     with col2:
         st.subheader("Sign Up")
         with st.form("register_form"):
             name = st.text_input("Full Name")
             email = st.text_input("Email")
             phone = st.text_input("Phone Number")
-            country = st.selectbox("Country", ["United States", "United Kingdom", "Canada", "Australia", "India", "Other"])
+            country = st.selectbox("Country", ["India", "United Kingdom", "Canada", "Australia", "United States", "Other"])
             handicap = st.slider("Handicap", 0, 36, 18)
             password = st.text_input("Password", type="password")
             confirm_password = st.text_input("Confirm Password", type="password")
             register_submitted = st.form_submit_button("Sign Up")
-            
+
             if register_submitted:
                 if password != confirm_password:
                     st.error("Passwords do not match")
@@ -314,46 +319,51 @@ def show_auth_page():
                 else:
                     st.error("Email already registered")
 
-# Main application layout
+
+# ---------------------------
+# Sidebar + Main app shell
+# ---------------------------
 def main_app():
-    # Sidebar navigation
     st.sidebar.title("⛳ Golf Match Manager")
-    
-    # User info in sidebar
+
     user_info = st.session_state.users[st.session_state.current_user]
     st.sidebar.markdown(f"**Welcome, {user_info['name']}**")
     st.sidebar.markdown(f"**Handicap:** {user_info['handicap']}")
-    
-    # Quick stats
+
     st.sidebar.markdown("---")
     st.sidebar.subheader("Quick Stats")
-    
-    user_matches = [m for m in st.session_state.matches 
-                   if user_info['name'] in m.get('players', [])]
+
+    user_matches = [m for m in st.session_state.matches if user_info['name'] in m.get('players', [])]
     upcoming_count = len([m for m in user_matches if m['status'] == 'Upcoming'])
     completed_count = len([m for m in user_matches if m['status'] == 'Completed'])
-    
+
     st.sidebar.markdown(f"**Upcoming Matches:** {upcoming_count}")
     st.sidebar.markdown(f"**Completed Matches:** {completed_count}")
-    
-    # Logout button
+
     st.sidebar.markdown("---")
     if st.sidebar.button("🚪 Logout"):
         st.session_state.authenticated = False
         st.session_state.current_user = None
+        st.session_state.redirected_after_login = False
         st.rerun()
 
-# Main function
+
+# ---------------------------
+# Main controller
+# ---------------------------
 def main():
     initialize_session_state()
-    
+
     if not st.session_state.authenticated:
         show_auth_page()
     else:
-        main_app()
-        # The actual page content will be handled by Streamlit's multi-page architecture
+        # After login, if not yet redirected, go to Home page once
+        if st.session_state.redirected_after_login:
+            st.session_state.redirected_after_login = False
+            st.switch_page("pages/1_🏠_Home.py")
+        else:
+            main_app()
+
 
 if __name__ == "__main__":
     main()
-
-
