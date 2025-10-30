@@ -3,7 +3,18 @@ from datetime import datetime
 import numpy as np
 
 def show_score_entry_page():
-    st.markdown('<div class="main-header">Score Entry</div>', unsafe_allow_html=True)
+    # st.markdown('<div class="main-header">Score Entry</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <h1 style='
+        font-size: 36px;
+        font-weight: bold;
+        color: #2E8B57;
+        text-align: center;
+        margin-bottom: 10px;
+    '>
+        Score Entry
+    </h1>
+    """, unsafe_allow_html=True)
     
     user_info = st.session_state.users[st.session_state.current_user]
     
@@ -169,3 +180,4 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
     st.warning("Please log in to enter scores.")
 else:
     show_score_entry_page()
+
