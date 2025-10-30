@@ -4,7 +4,24 @@ import numpy as np
 from datetime import datetime, timedelta
 
 def show_home_page():
-    st.markdown('<div class="main-header">🏌️ Golf Dashboard</div>', unsafe_allow_html=True)
+    # st.markdown('<div class="main-header">🏌️ Golf Dashboard</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <h1 style='
+        font-size: 36px;
+        font-weight: bold;
+        color: #2E8B57;
+        text-align: center;
+        margin-bottom: 10px;
+    '>
+        🏌️ Golf Dashboard
+    </h1>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <p style='font-size:16px; text-align:center; color:#555;'>
+            Use this form to record completed match results, opponents, and notes.
+        </p>
+    """, unsafe_allow_html=True)
     
     user_info = st.session_state.users[st.session_state.current_user]
     
@@ -356,5 +373,6 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
     st.warning("Please log in to access the dashboard.")
 else:
     show_home_page()
+
 
 
