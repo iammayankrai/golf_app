@@ -22,8 +22,26 @@ def save_match_data(new_record):
     df.to_csv(DATA_FILE, index=False)
 
 def show_match_details_page():
-    st.markdown('<div class="main-header">🏌️‍♂️ Add Completed Match Details</div>', unsafe_allow_html=True)
-    st.markdown("Use this form to record completed match results, opponents, and notes.")
+    # st.markdown('<div class="main-header">🏌️‍♂️ Add Completed Match Details</div>', unsafe_allow_html=True)
+    # st.markdown("Use this form to record completed match results, opponents, and notes.")
+    st.markdown("""
+    <h1 style='
+        font-size: 36px;
+        font-weight: bold;
+        color: #2E8B57;
+        text-align: center;
+        margin-bottom: 10px;
+    '>
+        🏌️‍♂️ Add Completed Match Details
+    </h1>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <p style='font-size:16px; text-align:center; color:#555;'>
+            Use this form to record completed match results, opponents, and notes.
+        </p>
+    """, unsafe_allow_html=True)
+
 
     # Load existing match data
     existing_data = load_match_data()
@@ -111,3 +129,4 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
     st.warning("Please log in to access this page.")
 else:
     show_match_details_page()
+
