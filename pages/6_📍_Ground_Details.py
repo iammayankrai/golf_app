@@ -3,7 +3,18 @@ import pandas as pd
 import numpy as np
 
 def show_gps_page():
-    st.markdown('<div class="main-header">Ground Details</div>', unsafe_allow_html=True)
+    # st.markdown('<div class="main-header">Ground Details</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <h1 style='
+        font-size: 36px;
+        font-weight: bold;
+        color: #2E8B57;
+        text-align: center;
+        margin-bottom: 10px;
+    '>
+        Ground Details
+    </h1>
+    """, unsafe_allow_html=True)
     
     # Course selection
     courses = [
@@ -161,3 +172,4 @@ if 'authenticated' not in st.session_state or not st.session_state.authenticated
 else:
 
     show_gps_page()
+
