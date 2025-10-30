@@ -2,7 +2,18 @@ import streamlit as st
 import pandas as pd
 
 def show_leaderboard_page():
-    st.markdown('<div class="main-header">Leaderboard</div>', unsafe_allow_html=True)
+    # st.markdown('<div class="main-header">Leaderboard</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <h1 style='
+        font-size: 36px;
+        font-weight: bold;
+        color: #2E8B57;
+        text-align: center;
+        margin-bottom: 10px;
+    '>
+        Leaderboard
+    </h1>
+    """, unsafe_allow_html=True)
     
     # Leaderboard type selection
     leaderboard_type = st.radio(
@@ -143,4 +154,5 @@ def show_team_leaderboard():
 if 'authenticated' not in st.session_state or not st.session_state.authenticated:
     st.warning("Please log in to view the leaderboard.")
 else:
+
     show_leaderboard_page()
